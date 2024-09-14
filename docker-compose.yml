@@ -1,0 +1,39 @@
+services:
+  ollama-service:
+    build:
+      context: .
+      dockerfile: ollama.Dockerfile
+    image: ollama-mistral-gpu
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_ACCEPT_LICENSES=true
+      - OLLAMA_HOST=0.0.0.0
+      - MODEL_NAME=mistral
+    volumes:
+      - ./data:/root/.ollama
+    networks:
+      - genai-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    ports:
+      - "3000:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama-service:11434
+    volumes:
+      - ./backend/data:/app/backend/data
+    networks:
+      - genai-network
+
+networks:
+  genai-network:
+    driver: bridge
+    name: genai-network
